@@ -1,0 +1,13 @@
+.bkit/
+.claude/settings.local.json
+.claude/.credentials.json
+.env
+.env.local
+.env.*.local
+.mcp.json
+*.pem
+*.key
+id_rsa*
+*.p12
+*.pfx
+.superpowers/
