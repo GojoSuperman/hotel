@@ -8,6 +8,7 @@
 |---|---|---|
 | `호텔룸_InstantSplat_colab.ipynb` | **사진 몇 장(2~12장)으로 빠른 3DGS** — COLMAP 생략, 검증 완료(2026-08-10) | 드라이브 `instantsplat_input/`에 JPG/PNG 2~12장 |
 | `호텔룸_3DGS_colab.ipynb` | 표준 3DGS(nerfstudio Splatfacto) — 고품질, 상업 이용에 유리 | 드라이브 `gsplat_input/`에 사진 50장+ 또는 영상 |
+| `파노라마_3D_colab.ipynb` | **360도 사진 1장 → 3D** — AI 깊이 추정(Depth Anything V2, Apache-2.0) 기반 | 드라이브 `pano_input/`에 2:1 등장방형 사진 1장 |
 
 노트북으로 여는 방법: [colab.research.google.com](https://colab.research.google.com) → 파일 → 노트 열기 → GitHub 탭 → `GojoSuperman/hotel` 검색 → 노트북 클릭.
 
