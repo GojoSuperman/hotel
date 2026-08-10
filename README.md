@@ -158,6 +158,23 @@ for i, v in enumerate(glob.glob(f'{MODEL_PATH}/**/*.mp4', recursive=True)):
 1. 드라이브 `instantsplat_input`의 기존 사진을 **지우고** 새 사진으로 교체
 2. 셀 4의 `SCENE` 이름 변경 (예: `room2`) → 셀 4~8만 재실행 (세션이 살아있으면 셀 1~3 생략)
 
+## 내 HTML에서 보기 (`viewer.html`)
+
+superspl.at 대신 이 저장소의 `viewer.html`로 직접 볼 수 있다 ([GaussianSplats3D](https://github.com/mkkellogg/GaussianSplats3D) 라이브러리 사용, 인터넷 연결 필요).
+
+1. 드라이브에서 받은 `instantsplat_<장면>.ply`를 `viewer.html`과 **같은 폴더**에 놓고 이름을 `scene.ply`로 변경
+   (또는 이름 유지하고 주소에 `?file=instantsplat_room1.ply`처럼 지정)
+2. 브라우저는 보안상 로컬 파일을 직접 못 읽으므로 **간이 서버로 열어야 한다**. 그 폴더에서:
+   ```bash
+   python3 -m http.server 8000
+   ```
+3. 브라우저에서 `http://localhost:8000/viewer.html` 접속
+
+팁:
+- **파일 용량 줄이기**: 원본 .ply는 수십~수백 MB일 수 있다. [superspl.at/editor](https://superspl.at/editor)에서 잡티 제거 후 `.splat`으로 내보내면 크게 줄고, `viewer.html?file=scene.splat`으로 그대로 열린다.
+- **장면이 뒤집혀 보이면**: `viewer.html`의 `cameraUp: [0, -1, 0]`을 `[0, 1, 0]`으로 수정.
+- **인터넷에 공개하려면**: 이 저장소 GitHub Pages를 켜거나(Settings → Pages), Vercel 등에 폴더째 배포하면 URL로 누구나 볼 수 있다 (splat 파일도 함께 커밋 필요, GitHub 파일당 100MB 제한 유의).
+
 ## 알아둘 것
 
 - **품질 기대치**: 사진이 찍힌 위치 근처 시점만 온전하다. 사진에 없는 각도는 구멍/늘어짐이 정상. 거울·유리·순백 벽면은 3DGS 공통 약점.
