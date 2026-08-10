@@ -160,20 +160,19 @@ for i, v in enumerate(glob.glob(f'{MODEL_PATH}/**/*.mp4', recursive=True)):
 
 ## 내 HTML에서 보기 (`viewer.html`)
 
-superspl.at 대신 이 저장소의 `viewer.html`로 직접 볼 수 있다 ([GaussianSplats3D](https://github.com/mkkellogg/GaussianSplats3D) 라이브러리 사용, 인터넷 연결 필요).
+superspl.at 대신 자체 뷰어로 볼 수 있다 ([GaussianSplats3D](https://github.com/mkkellogg/GaussianSplats3D) 라이브러리 사용, 인터넷 연결 필요).
 
-1. 드라이브에서 받은 `instantsplat_<장면>.ply`를 `viewer.html`과 **같은 폴더**에 놓고 이름을 `scene.ply`로 변경
-   (또는 이름 유지하고 주소에 `?file=instantsplat_room1.ply`처럼 지정)
-2. 브라우저는 보안상 로컬 파일을 직접 못 읽으므로 **간이 서버로 열어야 한다**. 그 폴더에서:
-   ```bash
-   python3 -m http.server 8000
-   ```
-3. 브라우저에서 `http://localhost:8000/viewer.html` 접속
+**가장 쉬운 방법 (설치·서버 불필요):**
+
+1. **https://gojosuperman.github.io/hotel/viewer.html** 접속
+2. 드라이브에서 내려받은 `instantsplat_….ply` 파일을 화면에 **드래그** (또는 클릭해서 선택)
+
+파일은 브라우저 안에서만 열리고 어디에도 업로드되지 않는다. 다른 파일을 보려면 새로고침 후 다시 드래그.
 
 팁:
-- **파일 용량 줄이기**: 원본 .ply는 수십~수백 MB일 수 있다. [superspl.at/editor](https://superspl.at/editor)에서 잡티 제거 후 `.splat`으로 내보내면 크게 줄고, `viewer.html?file=scene.splat`으로 그대로 열린다.
+- **파일 용량 줄이기**: 원본 .ply는 수십~수백 MB일 수 있다. [superspl.at/editor](https://superspl.at/editor)에서 잡티 제거 후 `.splat`으로 내보내면 크게 줄어든다. 뷰어는 .ply/.splat/.ksplat 모두 지원.
 - **장면이 뒤집혀 보이면**: `viewer.html`의 `cameraUp: [0, -1, 0]`을 `[0, 1, 0]`으로 수정.
-- **인터넷에 공개하려면**: 이 저장소 GitHub Pages를 켜거나(Settings → Pages), Vercel 등에 폴더째 배포하면 URL로 누구나 볼 수 있다 (splat 파일도 함께 커밋 필요, GitHub 파일당 100MB 제한 유의).
+- **드래그 없이 자동 로드**(사이트 임베드용): splat 파일을 저장소에 커밋하고 `viewer.html?file=scene.ply`처럼 주소로 지정하면 접속 즉시 로드된다 (GitHub 파일당 100MB 제한 유의). 로컬 개발 시엔 같은 폴더에서 `python3 -m http.server 8000` 후 `http://localhost:8000/viewer.html?file=scene.ply`.
 
 ## 알아둘 것
 

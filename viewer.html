@@ -6,15 +6,32 @@
 <title>호텔 룸 3D 뷰어</title>
 <style>
   body { margin: 0; overflow: hidden; background: #000; }
+  #drop {
+    position: fixed; inset: 0; z-index: 20; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    color: #fff; background: #111; font: 16px/1.7 system-ui, sans-serif;
+    border: 3px dashed #444; cursor: pointer; text-align: center; padding: 24px;
+  }
+  #drop.hover { border-color: #4da3ff; background: #16202c; }
+  #drop b { font-size: 22px; }
+  #drop small { color: #9aa; }
   #hint {
-    position: fixed; left: 12px; bottom: 12px; z-index: 10;
+    position: fixed; left: 12px; bottom: 12px; z-index: 10; display: none;
     color: #fff; background: rgba(0,0,0,.55); border-radius: 8px;
     padding: 8px 12px; font: 13px/1.6 system-ui, sans-serif;
   }
+  #file { display: none; }
 </style>
 </head>
 <body>
-<div id="hint">왼쪽 드래그: 회전 · 휠: 확대/축소 · 오른쪽 드래그: 이동</div>
+<div id="drop">
+  <b>3D 파일을 여기로 드래그</b>
+  <span>드라이브에서 내려받은 <code>instantsplat_….ply</code> 파일을 이 화면 위에 끌어다 놓으세요</span>
+  <span>또는 <u>클릭해서 파일 선택</u></span>
+  <small>.ply · .splat · .ksplat 지원 — 파일은 내 컴퓨터 안에서만 열리며 어디에도 업로드되지 않습니다</small>
+</div>
+<input type="file" id="file" accept=".ply,.splat,.ksplat">
+<div id="hint">왼쪽 드래그: 회전 · 휠: 확대/축소 · 오른쪽 드래그: 이동 · 다른 파일을 보려면 새로고침</div>
 
 <script type="importmap">
 {
@@ -27,21 +44,60 @@
 <script type="module">
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats3d';
 
-// 보여줄 파일: 기본은 같은 폴더의 scene.ply
-// 다른 파일을 보려면 주소 뒤에 ?file=파일명 (예: viewer.html?file=instantsplat_room2.ply)
-const file = new URLSearchParams(location.search).get('file') || 'scene.ply';
+const drop = document.getElementById('drop');
+const hint = document.getElementById('hint');
+const fileInput = document.getElementById('file');
 
 const viewer = new GaussianSplats3D.Viewer({
   cameraUp: [0, -1, 0],              // 장면이 뒤집혀 보이면 [0, 1, 0]으로 변경
-  sharedMemoryForWorkers: false      // 특수 서버 설정 없이(로컬/GitHub Pages) 동작하게 함
+  sharedMemoryForWorkers: false      // 특수 서버 설정 없이 어디서나 동작
 });
 
-viewer.addSplatScene(file, { showLoadingUI: true, progressiveLoad: true })
-  .then(() => viewer.start())
-  .catch(err => {
-    document.getElementById('hint').textContent =
-      `파일을 열지 못했습니다: ${file} — 같은 폴더에 파일이 있는지, 서버로 열었는지 확인하세요. (${err.message})`;
-  });
+const FORMATS = {
+  ply: GaussianSplats3D.SceneFormat.Ply,
+  splat: GaussianSplats3D.SceneFormat.Splat,
+  ksplat: GaussianSplats3D.SceneFormat.KSplat
+};
+
+async function load(url, name) {
+  const ext = (name.split('.').pop() || 'ply').toLowerCase();
+  if (!(ext in FORMATS)) { alert('지원하지 않는 형식입니다: ' + ext); return; }
+  drop.style.display = 'none';
+  try {
+    await viewer.addSplatScene(url, {
+      format: FORMATS[ext],
+      showLoadingUI: true,
+      splatAlphaRemovalThreshold: 5
+    });
+    viewer.start();
+    hint.style.display = 'block';
+  } catch (err) {
+    drop.style.display = 'flex';
+    drop.innerHTML = '<b>파일을 열지 못했습니다</b><span>' + (err.message || err) +
+      '</span><span><u>클릭해서 다시 시도</u></span>';
+  }
+}
+
+// 클릭으로 파일 선택
+drop.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if (f) load(URL.createObjectURL(f), f.name);
+});
+
+// 드래그 앤 드롭
+addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover'); });
+addEventListener('dragleave', () => drop.classList.remove('hover'));
+addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('hover');
+  const f = e.dataTransfer.files[0];
+  if (f) load(URL.createObjectURL(f), f.name);
+});
+
+// 주소로 파일 지정도 지원: viewer.html?file=scene.ply (같은 폴더에 파일을 두고 서버로 열 때)
+const fileParam = new URLSearchParams(location.search).get('file');
+if (fileParam) load(fileParam, fileParam);
 </script>
 </body>
 </html>
