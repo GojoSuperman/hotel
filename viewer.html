@@ -15,6 +15,7 @@
   #drop.hover { border-color: #4da3ff; background: #16202c; }
   #drop b { font-size: 22px; }
   #drop small { color: #9aa; }
+  #status { color: #ffd27d; }
   #hint {
     position: fixed; left: 12px; bottom: 12px; z-index: 10; display: none;
     color: #fff; background: rgba(0,0,0,.55); border-radius: 8px;
@@ -29,6 +30,7 @@
   <span>드라이브에서 내려받은 <code>instantsplat_….ply</code> 파일을 이 화면 위에 끌어다 놓으세요</span>
   <span>또는 <u>클릭해서 파일 선택</u></span>
   <small>.ply · .splat · .ksplat 지원 — 파일은 내 컴퓨터 안에서만 열리며 어디에도 업로드되지 않습니다</small>
+  <span id="status"></span>
 </div>
 <input type="file" id="file" accept=".ply,.splat,.ksplat">
 <div id="hint">왼쪽 드래그: 회전 · 휠: 확대/축소 · 오른쪽 드래그: 이동 · 다른 파일을 보려면 새로고침</div>
@@ -37,33 +39,51 @@
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-    "@mkkellogg/gaussian-splats3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats3d@0.4.7/build/gaussian-splats-3d.module.min.js"
+    "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js"
   }
 }
 </script>
 <script type="module">
-import * as GaussianSplats3D from '@mkkellogg/gaussian-splats3d';
-
 const drop = document.getElementById('drop');
 const hint = document.getElementById('hint');
+const status = document.getElementById('status');
 const fileInput = document.getElementById('file');
 
-const viewer = new GaussianSplats3D.Viewer({
-  cameraUp: [0, -1, 0],              // 장면이 뒤집혀 보이면 [0, 1, 0]으로 변경
-  sharedMemoryForWorkers: false      // 특수 서버 설정 없이 어디서나 동작
+// UI 이벤트를 라이브러리 로드보다 먼저 연결 — 로드 실패 시에도 에러가 화면에 보이게 함
+drop.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if (f) load(URL.createObjectURL(f), f.name);
+});
+addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover'); });
+addEventListener('dragleave', () => drop.classList.remove('hover'));
+addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('hover');
+  const f = e.dataTransfer.files[0];
+  if (f) load(URL.createObjectURL(f), f.name);
 });
 
-const FORMATS = {
-  ply: GaussianSplats3D.SceneFormat.Ply,
-  splat: GaussianSplats3D.SceneFormat.Splat,
-  ksplat: GaussianSplats3D.SceneFormat.KSplat
-};
+let viewer = null;
 
 async function load(url, name) {
   const ext = (name.split('.').pop() || 'ply').toLowerCase();
-  if (!(ext in FORMATS)) { alert('지원하지 않는 형식입니다: ' + ext); return; }
-  drop.style.display = 'none';
   try {
+    status.textContent = '라이브러리 로딩 중…';
+    const GS = await import('@mkkellogg/gaussian-splats-3d');
+
+    const FORMATS = { ply: GS.SceneFormat.Ply, splat: GS.SceneFormat.Splat, ksplat: GS.SceneFormat.KSplat };
+    if (!(ext in FORMATS)) { status.textContent = '지원하지 않는 형식입니다: .' + ext; return; }
+
+    if (!viewer) {
+      viewer = new GS.Viewer({
+        cameraUp: [0, -1, 0],              // 장면이 뒤집혀 보이면 [0, 1, 0]으로 변경
+        sharedMemoryForWorkers: false      // 특수 서버 설정 없이 어디서나 동작
+      });
+    }
+
+    status.textContent = '파일 읽는 중… (큰 파일은 1~2분 걸릴 수 있습니다)';
+    drop.style.display = 'none';
     await viewer.addSplatScene(url, {
       format: FORMATS[ext],
       showLoadingUI: true,
@@ -73,27 +93,10 @@ async function load(url, name) {
     hint.style.display = 'block';
   } catch (err) {
     drop.style.display = 'flex';
-    drop.innerHTML = '<b>파일을 열지 못했습니다</b><span>' + (err.message || err) +
-      '</span><span><u>클릭해서 다시 시도</u></span>';
+    status.textContent = '오류: ' + (err && err.message ? err.message : err) + ' — 새로고침 후 다시 시도해 보세요';
+    console.error(err);
   }
 }
-
-// 클릭으로 파일 선택
-drop.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  const f = fileInput.files[0];
-  if (f) load(URL.createObjectURL(f), f.name);
-});
-
-// 드래그 앤 드롭
-addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover'); });
-addEventListener('dragleave', () => drop.classList.remove('hover'));
-addEventListener('drop', e => {
-  e.preventDefault();
-  drop.classList.remove('hover');
-  const f = e.dataTransfer.files[0];
-  if (f) load(URL.createObjectURL(f), f.name);
-});
 
 // 주소로 파일 지정도 지원: viewer.html?file=scene.ply (같은 폴더에 파일을 두고 서버로 열 때)
 const fileParam = new URLSearchParams(location.search).get('file');
